@@ -135,8 +135,11 @@ const alerts = [
 
 const appView = document.getElementById('app-view');
 
-// Smart monitor tuning: change these thresholds if you want different ring behavior
-// without touching the underlying device data or sensor calculations.
+// =============================================================
+// SMART MONITOR TUNING
+// Edit this block only if you want to change how the ring state
+// is interpreted. Keep the underlying sensor data and range logic intact.
+// =============================================================
 const smartMonitorThresholds = {
   default: { minSafe: 0, maxSafe: 0.8, warningMin: 0.55, warningMax: 0.92, criticalMax: 1 },
   pressure: { minSafe: 1.4, maxSafe: 4.5, warningMin: 0.9, warningMax: 4.8, criticalMax: 5 },
@@ -149,8 +152,11 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-// Converts the live measurement into the % of ring segments to light up.
-// min / max should stay tied to the existing sensor data range you already use.
+// =============================================================
+// RING FILL CALCULATION
+// This converts the current reading into a percentage for the SVG ring.
+// Keep the same min/max source values from the live sensor data.
+// =============================================================
 function getRingFillPercent(value, min, max) {
   if (!Number.isFinite(value) || !Number.isFinite(min) || !Number.isFinite(max) || max === min) {
     return 0;
@@ -160,6 +166,11 @@ function getRingFillPercent(value, min, max) {
   return Math.round(clamp(ratio, 0, 1) * 100);
 }
 
+// =============================================================
+// STATUS CLASSIFICATION
+// Maps the live reading into normal / warning / critical / offline states.
+// The existing application text labels are still preserved.
+// =============================================================
 function getStatusClass(value, max, statusLabel) {
   const normalized = value / max;
   if (statusLabel && statusLabel.toLowerCase().includes('critical')) {
@@ -185,6 +196,11 @@ function getStatusClass(value, max, statusLabel) {
   return 'normal';
 }
 
+// =============================================================
+// RING COLOR PALETTE
+// Controls the LED ring colors for each condition.
+// Edit these accent and label values if you want a cleaner look.
+// =============================================================
 function getRingPalette(statusClass) {
   const palette = {
     normal: {
@@ -222,8 +238,11 @@ function getRingPalette(statusClass) {
   return palette[statusClass] || palette.unknown;
 }
 
-// Top-center status icon switcher. Change the label here if you want a different
-// connectivity symbol for connected / weak / offline / bluetooth / cloud / sensor.
+// =============================================================
+// TOP STATUS ICON
+// This controls the small top-center connectivity symbol.
+// Change the SVG mappings here if you want a different icon set.
+// =============================================================
 function getConnectionIcon(connectionStatus = 'connected') {
   const iconMap = {
     connected: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a14 14 0 0 1 14 0"/><path d="M8.5 15.5a8.5 8.5 0 0 1 7 0"/><path d="M12 19v0"/></svg>',
@@ -252,8 +271,12 @@ function pathArc(cx, cy, radius, startAngle, endAngle) {
   return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
 }
 
-// This is the live SVG ring that replaces the old static gauge look.
-// Segment count and radius are the main knobs if you want the ring tighter or looser.
+// =============================================================
+// SVG SEGMENTED RING
+// This is the live circular LED ring rendered with SVG paths.
+// Increase or decrease the segment count to make the ring feel tighter
+// or more dense while keeping the same data-driven behavior.
+// =============================================================
 function buildSegmentedRingMarkup(fillPercent, statusClass) {
   const palette = getRingPalette(statusClass);
   const segmentCount = 56;
@@ -296,8 +319,12 @@ function formatValue(value, unit) {
   return value;
 }
 
-// Single reusable card builder for the smart monitor design.
-// Feed it existing sensor values and it will render the premium circular widget.
+// =============================================================
+// SMART MONITOR CARD BUILDER
+// This is the reusable card template for the new futuristic monitor.
+// Pass in the existing value, unit, status, and icon and it will render
+// the circular smart-home widget without changing the data source.
+// =============================================================
 function createSmartMonitorMarkup({
   title,
   value,
@@ -325,7 +352,6 @@ function createSmartMonitorMarkup({
           <div class="smart-monitor-outer-shadow"></div>
           <div class="smart-monitor-bridge"></div>
           <div class="smart-monitor-display">
-            <div class="smart-monitor-top-status">${getConnectionIcon(connectionStatus)}</div>
             ${buildSegmentedRingMarkup(fillPercent, statusClass)}
             <div class="smart-monitor-center-screen">
               <div class="smart-monitor-sensor-icon">${icon}</div>
@@ -380,6 +406,12 @@ function goBack() {
   render();
 }
 
+// =============================================================
+// PAGE RENDERER
+// The main HTML output is assembled here, including the overview and
+// the per-device detail view. This is where the new monitor cards are
+// injected into the existing dashboard flow.
+// =============================================================
 function render() {
   const shutdownBtn = document.getElementById('shutdown-btn');
   if (shutdownBtn) {

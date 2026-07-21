@@ -1,35 +1,217 @@
+/* ============================================================================
+   ATLAS HOME CONTROL — STYLESHEET
+   ----------------------------------------------------------------------------
+   Drop-in replacement: every class name matches the original markup.
+
+   Contents
+     1. Design tokens
+     2. Reset & base
+     3. Buttons & interactive primitives
+     4. Layout: shell & topbar
+     5. Navigation
+     6. Hero
+     7. Smart monitor (dashboard gauge device)
+     8. Dashboard panels
+     9. Detail view
+    10. Alerts
+    11. Gauge detail panel
+    12. Responsive
+    13. Accessibility & motion preferences
+   ========================================================================== */
+
+/* ============================================================================
+   1. DESIGN TOKENS
+   Every color, radius, shadow, and timing in this file is defined here once.
+   To retheme or retune the app, edit this block only.
+   ========================================================================== */
 :root {
   color-scheme: dark;
+
+  /* Palette */
   --bg: #07111f;
-  --panel: rgba(10, 20, 36, 0.92);
-  --panel-2: rgba(15, 28, 47, 0.92);
   --text: #f3f6ff;
+  --text-soft: #c7d6ef;
   --muted: #8da0bf;
-  --line: rgba(255, 255, 255, 0.08);
   --water: #2ec7ff;
+  --water-deep: #28b5ff;
   --electric: #8a7dff;
   --gas: #ffca6b;
   --positive: #41d483;
+  --positive-soft: #78f0b4;
+  --danger: #ff6f61;
+  --danger-deep: #ff4f4f;
+  --danger-soft: #ffb2a7;
+  --gas-soft: #ffd98c;
+  --water-soft: #9fe6ff;
+  --glow: #89e6ff;
+
+  /* Surfaces — the translucent white fills used throughout */
+  --surface-1: rgba(255, 255, 255, 0.04);
+  --surface-2: rgba(255, 255, 255, 0.05);
+  --surface-3: rgba(255, 255, 255, 0.06);
+  --surface-4: rgba(255, 255, 255, 0.08);
+  --surface-5: rgba(255, 255, 255, 0.09);
+  --line: rgba(255, 255, 255, 0.08);
+  --line-faint: rgba(255, 255, 255, 0.06);
+
+  /* Tinted fills for pills and alert accents */
+  --tint-positive: rgba(65, 212, 131, 0.16);
+  --tint-danger: rgba(255, 111, 97, 0.18);
+  --tint-gas: rgba(255, 202, 107, 0.18);
+  --tint-water: rgba(46, 199, 255, 0.16);
+
+  /* Panel gradients */
+  --panel-grad: linear-gradient(145deg, rgba(18, 31, 53, 0.95), rgba(7, 16, 30, 0.95));
+  --screen-grad: linear-gradient(145deg, rgba(10, 20, 36, 0.95), rgba(6, 13, 24, 0.95));
+  --accent-grad: linear-gradient(135deg, var(--water), var(--water-deep));
+  --danger-grad: linear-gradient(135deg, var(--danger), var(--danger-deep));
+
+  /* Radii */
+  --r-pill: 999px;
+  --r-xl: 24px;
+  --r-lg: 18px;
+  --r-md: 14px;
+  --r-panel-mobile: 16px;
+
+  /* Shadows */
+  --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.22);
+  --shadow-housing:
+    inset 0 1px 1px rgba(255, 255, 255, 0.9),
+    inset 0 -12px 24px rgba(45, 64, 86, 0.5),
+    0 16px 30px rgba(0, 0, 0, 0.3);
+  --shadow-housing-hover:
+    inset 0 1px 1px rgba(255, 255, 255, 0.9),
+    inset 0 -12px 24px rgba(45, 64, 86, 0.5),
+    0 22px 40px rgba(0, 0, 0, 0.36);
+  --glow-status: 0 0 10px rgba(68, 212, 255, 0.35);
+  --glow-status-hover: 0 0 12px rgba(68, 212, 255, 0.44);
+
+  /* Motion */
+  --t-fast: 0.2s ease;
+
+  /* Focus ring — visible on the dark ground, offset so it never clips */
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--water);
+
+  /* Type */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
-* {
+/* ============================================================================
+   2. RESET & BASE
+   ========================================================================== */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   background: radial-gradient(circle at top left, #15304f 0%, var(--bg) 45%, #03070d 100%);
   color: var(--text);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, p {
+  margin: 0;
 }
 
 button {
   font: inherit;
   cursor: pointer;
   border: none;
+  color: inherit;
+  background: none;
 }
 
+/* One focus treatment for every interactive element in the app. */
+:where(button, a, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+::selection {
+  background: rgba(46, 199, 255, 0.35);
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+
+/* ============================================================================
+   3. BUTTONS & INTERACTIVE PRIMITIVES
+   ========================================================================== */
+.ghost-btn,
+.primary-btn,
+.secondary-btn,
+.back-btn,
+.shutdown-btn,
+.nav-btn {
+  border-radius: var(--r-pill);
+  font-weight: 600;
+  transition: transform var(--t-fast), background var(--t-fast), box-shadow var(--t-fast);
+}
+
+.ghost-btn,
+.primary-btn,
+.secondary-btn,
+.back-btn {
+  padding: 10px 16px;
+}
+
+.primary-btn {
+  background: var(--accent-grad);
+  color: #041625;
+}
+
+.secondary-btn,
+.back-btn {
+  background: var(--surface-4);
+  color: var(--text);
+}
+
+.ghost-btn {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.primary-btn:hover,
+.secondary-btn:hover,
+.back-btn:hover,
+.ghost-btn:hover {
+  transform: translateY(-1px);
+}
+
+.primary-btn:active,
+.secondary-btn:active,
+.back-btn:active,
+.ghost-btn:active,
+.nav-btn:active,
+.shutdown-btn:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.compact {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+/* ============================================================================
+   4. LAYOUT: SHELL & TOPBAR
+   ========================================================================== */
 .app-shell {
   max-width: 1200px;
   margin: 0 auto;
@@ -43,20 +225,11 @@ button {
   margin-bottom: 16px;
 }
 
-.eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.24em;
-  font-size: 0.72rem;
-  color: var(--muted);
-  margin: 0 0 6px;
-}
-
-h1,
-h2,
-h3,
-h4,
-p {
-  margin: 0;
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .status-pill {
@@ -64,8 +237,8 @@ p {
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.08);
+  border-radius: var(--r-pill);
+  background: var(--surface-4);
   color: var(--text);
 }
 
@@ -74,9 +247,26 @@ p {
   height: 9px;
   border-radius: 50%;
   background: var(--positive);
-  box-shadow: 0 0 0 6px rgba(65, 212, 131, 0.16);
+  box-shadow: 0 0 0 6px var(--tint-positive);
 }
 
+.shutdown-btn {
+  padding: 10px 14px;
+  background: var(--surface-4);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-weight: 700;
+}
+
+.shutdown-btn:hover,
+.shutdown-btn.active {
+  background: var(--danger-grad);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* ============================================================================
+   5. NAVIGATION
+   ========================================================================== */
 .bottom-nav {
   display: flex;
   gap: 10px;
@@ -86,46 +276,27 @@ p {
 
 .nav-btn {
   padding: 10px 14px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.06);
+  background: var(--surface-3);
   color: var(--text);
-  transition: transform 0.2s ease, background 0.2s ease;
 }
 
 .nav-btn.active,
 .nav-btn:hover {
-  background: linear-gradient(135deg, var(--water), #28b5ff);
+  background: var(--accent-grad);
   color: #041625;
   transform: translateY(-1px);
 }
 
-.ghost-btn,
-.primary-btn,
-.secondary-btn,
-.back-btn {
-  border-radius: 999px;
-  padding: 10px 16px;
-  font-weight: 600;
-}
-
-.primary-btn {
-  background: linear-gradient(135deg, var(--water), #28b5ff);
-  color: #041625;
-}
-
-.secondary-btn,
-.back-btn {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text);
-}
-
+/* ============================================================================
+   6. HERO
+   ========================================================================== */
 .hero-card,
 .detail-card,
 .panel {
-  background: linear-gradient(145deg, rgba(18, 31, 53, 0.95), rgba(7, 16, 30, 0.95));
+  background: var(--panel-grad);
   border: 1px solid var(--line);
-  border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.22);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card);
 }
 
 .hero-card {
@@ -140,6 +311,7 @@ p {
   margin-bottom: 10px;
   line-height: 1.25;
   max-width: 700px;
+  text-wrap: balance;
 }
 
 .hero-text {
@@ -155,8 +327,15 @@ p {
   gap: 10px;
 }
 
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
 .hero-metric {
-  background: var(--panel-2);
+  background: rgba(15, 28, 47, 0.92);
   border: 1px solid var(--line);
   border-radius: 20px;
   padding: 18px;
@@ -176,7 +355,7 @@ p {
   place-items: center;
   margin: 0 auto;
   position: relative;
-  background: conic-gradient(var(--ring-color) calc(var(--ring-percent) * 1%), rgba(255, 255, 255, 0.08) 0);
+  background: conic-gradient(var(--ring-color) calc(var(--ring-percent) * 1%), var(--surface-4) 0);
 }
 
 .hero-ring::after {
@@ -184,8 +363,8 @@ p {
   position: absolute;
   inset: 10px;
   border-radius: 50%;
-  background: linear-gradient(145deg, rgba(10, 20, 36, 0.95), rgba(6, 13, 24, 0.95));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--screen-grad);
+  border: 1px solid var(--line);
 }
 
 .hero-ring-inner {
@@ -197,6 +376,7 @@ p {
 .hero-ring span {
   font-size: 1.45rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .hero-ring small {
@@ -224,7 +404,14 @@ p {
   color: var(--muted);
 }
 
-/* Dashboard grid for the circular smart monitor cards */
+/* ============================================================================
+   7. SMART MONITOR (dashboard gauge device)
+   ----------------------------------------------------------------------------
+   Layout knobs:
+   - Cards per row / density:  .metrics-grid grid-template-columns
+   - Device footprint:         .smart-monitor-shell max-width clamp
+   - Screen finish & bezel:    .smart-monitor-display
+   ========================================================================== */
 .metrics-grid {
   display: grid;
   gap: clamp(18px, 2.4vw, 26px);
@@ -247,7 +434,17 @@ p {
   filter: brightness(1.05);
 }
 
-/* Main circular device shell size and proportions */
+/* Focus mirrors hover so keyboard users get the same affordance,
+   with the ring drawn on the circular housing rather than the card box. */
+.smart-monitor-card:focus-visible {
+  box-shadow: none;
+  transform: translateY(-4px);
+}
+
+.smart-monitor-card:focus-visible .smart-monitor-outer-housing {
+  box-shadow: var(--shadow-housing-hover), var(--focus-ring);
+}
+
 .smart-monitor-shell {
   width: 100%;
   max-width: clamp(176px, 18vw, 220px);
@@ -264,20 +461,25 @@ p {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 32% 28%, rgba(243, 247, 255, 0.9), rgba(210, 219, 233, 0.78) 26%, rgba(141, 156, 176, 0.42) 62%, rgba(74, 94, 122, 0.66) 100%);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.9),
-    inset 0 -12px 24px rgba(45, 64, 86, 0.5),
-    0 16px 30px rgba(0, 0, 0, 0.3);
+  background: radial-gradient(
+    circle at 32% 28%,
+    rgba(243, 247, 255, 0.9),
+    rgba(210, 219, 233, 0.78) 26%,
+    rgba(141, 156, 176, 0.42) 62%,
+    rgba(74, 94, 122, 0.66) 100%
+  );
+  box-shadow: var(--shadow-housing);
   padding: 8px;
+  transition: box-shadow 0.22s ease;
 }
 
 .smart-monitor-outer-shadow {
   position: absolute;
   inset: 10px;
   border-radius: 50%;
-  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.26), inset 0 0 34px rgba(0, 0, 0, 0.38);
+  box-shadow:
+    inset 0 0 10px rgba(255, 255, 255, 0.26),
+    inset 0 0 34px rgba(0, 0, 0, 0.38);
   pointer-events: none;
 }
 
@@ -285,11 +487,15 @@ p {
   position: absolute;
   inset: 12px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.56), rgba(255,255,255,0.12) 40%, rgba(8, 15, 28, 0.16) 100%);
+  background: radial-gradient(
+    circle at 35% 30%,
+    rgba(255, 255, 255, 0.56),
+    rgba(255, 255, 255, 0.12) 40%,
+    rgba(8, 15, 28, 0.16) 100%
+  );
   pointer-events: none;
 }
 
-/* Inner dark screen and bezel styling */
 .smart-monitor-display {
   position: relative;
   width: 88%;
@@ -297,11 +503,10 @@ p {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background:
-    radial-gradient(circle at 50% 30%, rgba(24, 42, 68, 0.98), rgba(7, 13, 25, 0.98) 72%);
+  background: radial-gradient(circle at 50% 30%, rgba(24, 42, 68, 0.98), rgba(7, 13, 25, 0.98) 72%);
   border: 1px solid rgba(206, 223, 245, 0.14);
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,0.04),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
     inset 0 0 20px rgba(0, 0, 0, 0.62);
   overflow: hidden;
 }
@@ -325,11 +530,12 @@ p {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  color: #89e6ff;
+  color: var(--glow);
   background: rgba(5, 10, 18, 0.92);
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 0 10px rgba(68, 212, 255, 0.35);
+  border: 1px solid var(--line);
+  box-shadow: var(--glow-status);
   z-index: 3;
+  transition: box-shadow 0.22s ease;
 }
 
 .smart-monitor-top-status svg {
@@ -345,7 +551,6 @@ p {
   pointer-events: none;
 }
 
-/* Centered measurement content inside the screen */
 .smart-monitor-center-screen {
   position: relative;
   z-index: 2;
@@ -371,11 +576,13 @@ p {
   flex-wrap: wrap;
 }
 
+/* Tabular numerals keep live readings from shifting width as digits change. */
 .smart-monitor-value {
   font-size: clamp(1.35rem, 4.8vw, 2rem);
   line-height: 1;
   font-weight: 800;
   letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
 }
 
 .smart-monitor-unit {
@@ -393,7 +600,7 @@ p {
 }
 
 .smart-monitor-measurement-label {
-  color: #c7d6ef;
+  color: var(--text-soft);
   font-size: clamp(0.56rem, 1vw, 0.72rem);
   font-weight: 700;
 }
@@ -404,16 +611,16 @@ p {
 }
 
 .smart-monitor-card:hover .smart-monitor-outer-housing {
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.9),
-    inset 0 -12px 24px rgba(45, 64, 86, 0.5),
-    0 22px 40px rgba(0, 0, 0, 0.36);
+  box-shadow: var(--shadow-housing-hover);
 }
 
 .smart-monitor-card:hover .smart-monitor-top-status {
-  box-shadow: 0 0 12px rgba(68, 212, 255, 0.44);
+  box-shadow: var(--glow-status-hover);
 }
 
+/* ============================================================================
+   8. DASHBOARD PANELS
+   ========================================================================== */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
@@ -433,14 +640,24 @@ p {
 
 .pill {
   padding: 7px 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 0.79rem;
   font-weight: 600;
 }
 
 .pill.positive {
-  background: rgba(65, 212, 131, 0.16);
-  color: #78f0b4;
+  background: var(--tint-positive);
+  color: var(--positive-soft);
+}
+
+.pill.neutral {
+  background: var(--surface-4);
+  color: var(--text);
+}
+
+.pill.warn {
+  background: rgba(255, 111, 97, 0.16);
+  color: var(--danger-soft);
 }
 
 .status-grid {
@@ -451,9 +668,9 @@ p {
 
 .status-card {
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--r-md);
   padding: 14px;
-  background: rgba(255,255,255,0.04);
+  background: var(--surface-1);
 }
 
 .status-card h4 {
@@ -465,6 +682,9 @@ p {
   line-height: 1.5;
 }
 
+/* ============================================================================
+   9. DETAIL VIEW
+   ========================================================================== */
 .detail-card {
   padding: 24px;
   display: grid;
@@ -477,18 +697,18 @@ p {
   align-items: center;
   gap: 16px;
   padding: 18px;
-  border-radius: 18px;
-  background: rgba(255,255,255,0.04);
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
 }
 
 .detail-icon {
   font-size: 2.4rem;
   width: 60px;
   height: 60px;
-  border-radius: 18px;
+  border-radius: var(--r-lg);
   display: grid;
   place-items: center;
-  background: rgba(255,255,255,0.08);
+  background: var(--surface-4);
 }
 
 .detail-metrics {
@@ -499,8 +719,8 @@ p {
 
 .info-card {
   padding: 14px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.04);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
   border: 1px solid var(--line);
 }
 
@@ -519,52 +739,9 @@ p {
   flex-wrap: wrap;
 }
 
-.topbar-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.shutdown-btn {
-  border-radius: 999px;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  font-weight: 700;
-  transition: transform 0.2s ease, background 0.2s ease;
-}
-
-.shutdown-btn:hover,
-.shutdown-btn.active {
-  background: linear-gradient(135deg, #ff6f61, #ff4f4f);
-  color: white;
-  transform: translateY(-1px);
-}
-
-.hero-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.pill.neutral {
-  background: rgba(255,255,255,0.08);
-  color: var(--text);
-}
-
-.pill.warn {
-  background: rgba(255, 111, 97, 0.16);
-  color: #ffb2a7;
-}
-
-.compact {
-  padding: 8px 12px;
-  font-size: 0.9rem;
-}
-
+/* ============================================================================
+   10. ALERTS
+   ========================================================================== */
 .alert-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -573,25 +750,17 @@ p {
 
 .alert-card {
   padding: 16px;
-  border-radius: 18px;
-  background: rgba(255,255,255,0.05);
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
   border: 1px solid var(--line);
   display: grid;
   gap: 10px;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform var(--t-fast), border-color var(--t-fast), box-shadow var(--t-fast);
 }
 
-.alert-card.critical {
-  border-color: rgba(255, 111, 97, 0.45);
-}
-
-.alert-card.warning {
-  border-color: rgba(255, 202, 107, 0.4);
-}
-
-.alert-card.info {
-  border-color: rgba(46, 199, 255, 0.35);
-}
+.alert-card.critical { border-color: rgba(255, 111, 97, 0.45); }
+.alert-card.warning  { border-color: rgba(255, 202, 107, 0.4); }
+.alert-card.info     { border-color: rgba(46, 199, 255, 0.35); }
 
 .alert-top {
   display: flex;
@@ -602,7 +771,7 @@ p {
 
 .severity-pill {
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-size: 0.7rem;
@@ -611,18 +780,18 @@ p {
 }
 
 .severity-pill.critical {
-  background: rgba(255, 111, 97, 0.18);
-  color: #ffb2a7;
+  background: var(--tint-danger);
+  color: var(--danger-soft);
 }
 
 .severity-pill.warning {
-  background: rgba(255, 202, 107, 0.18);
-  color: #ffd98c;
+  background: var(--tint-gas);
+  color: var(--gas-soft);
 }
 
 .severity-pill.info {
-  background: rgba(46, 199, 255, 0.16);
-  color: #9fe6ff;
+  background: var(--tint-water);
+  color: var(--water-soft);
 }
 
 .alert-meta {
@@ -646,11 +815,17 @@ p {
   gap: 10px;
   align-items: flex-start;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--line-faint);
 }
 
 .alert-list li:last-child {
   border-bottom: none;
+}
+
+.alert-list p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-top: 4px;
 }
 
 .dot {
@@ -663,14 +838,11 @@ p {
 
 .dot.green { background: var(--positive); }
 .dot.amber { background: var(--gas); }
-.dot.blue { background: var(--water); }
+.dot.blue  { background: var(--water); }
 
-.alert-list p {
-  color: var(--muted);
-  font-size: 0.9rem;
-  margin-top: 4px;
-}
-
+/* ============================================================================
+   11. GAUGE DETAIL PANEL
+   ========================================================================== */
 .gauge-panel {
   padding: 6px 0 4px;
 }
@@ -681,8 +853,8 @@ p {
   gap: 20px;
   align-items: center;
   padding: 20px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--r-xl);
+  background: var(--surface-1);
   border: 1px solid var(--line);
 }
 
@@ -715,18 +887,23 @@ p {
 
 .mini-metric {
   padding: 12px;
-  border-radius: 14px;
+  border-radius: var(--r-md);
   text-align: left;
   color: var(--text);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   border: 1px solid transparent;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+
+.mini-metric:hover {
+  border-color: var(--line);
 }
 
 .mini-metric.active {
-  background: rgba(255, 255, 255, 0.09);
+  background: var(--surface-5);
 }
 
 .mini-metric span {
@@ -738,8 +915,12 @@ p {
 
 .mini-metric strong {
   font-size: 1rem;
+  font-variant-numeric: tabular-nums;
 }
 
+/* ============================================================================
+   12. RESPONSIVE
+   ========================================================================== */
 @media (max-width: 900px) {
   .hero-card,
   .dashboard-grid,
@@ -773,12 +954,7 @@ p {
   .hero-card,
   .panel,
   .detail-card {
-    border-radius: 16px;
-  }
-
-  .secondary-btn,
-  .back-btn {
-    margin-left: 0;
+    border-radius: var(--r-panel-mobile);
   }
 
   .topbar-actions {
@@ -787,3 +963,28 @@ p {
   }
 }
 
+/* ============================================================================
+   13. ACCESSIBILITY & MOTION PREFERENCES
+   For people who've asked their OS to reduce motion, all lifts, lifts-on-
+   hover, and animated transitions are disabled; the app stays fully usable.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .nav-btn:hover,
+  .primary-btn:hover,
+  .secondary-btn:hover,
+  .back-btn:hover,
+  .ghost-btn:hover,
+  .shutdown-btn:hover,
+  .smart-monitor-card:hover,
+  .smart-monitor-card:focus-visible {
+    transform: none;
+  }
+}
