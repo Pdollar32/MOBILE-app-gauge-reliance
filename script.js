@@ -135,6 +135,214 @@ const alerts = [
 
 const appView = document.getElementById('app-view');
 
+// Smart monitor tuning: change these thresholds if you want different ring behavior
+// without touching the underlying device data or sensor calculations.
+const smartMonitorThresholds = {
+  default: { minSafe: 0, maxSafe: 0.8, warningMin: 0.55, warningMax: 0.92, criticalMax: 1 },
+  pressure: { minSafe: 1.4, maxSafe: 4.5, warningMin: 0.9, warningMax: 4.8, criticalMax: 5 },
+  flow: { minSafe: 0.35, maxSafe: 1.05, warningMin: 0.2, warningMax: 1.2, criticalMax: 1.4 },
+  usage: { minSafe: 0.2, maxSafe: 0.85, warningMin: 0.1, warningMax: 0.95, criticalMax: 1 },
+  efficiency: { minSafe: 0.55, maxSafe: 1, warningMin: 0.45, warningMax: 0.98, criticalMax: 1 }
+};
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+// Converts the live measurement into the % of ring segments to light up.
+// min / max should stay tied to the existing sensor data range you already use.
+function getRingFillPercent(value, min, max) {
+  if (!Number.isFinite(value) || !Number.isFinite(min) || !Number.isFinite(max) || max === min) {
+    return 0;
+  }
+
+  const ratio = (value - min) / (max - min);
+  return Math.round(clamp(ratio, 0, 1) * 100);
+}
+
+function getStatusClass(value, max, statusLabel) {
+  const normalized = value / max;
+  if (statusLabel && statusLabel.toLowerCase().includes('critical')) {
+    return 'critical';
+  }
+
+  if (statusLabel && statusLabel.toLowerCase().includes('warning')) {
+    return 'warning';
+  }
+
+  if (statusLabel && statusLabel.toLowerCase().includes('offline')) {
+    return 'offline';
+  }
+
+  if (normalized >= 0.9) {
+    return 'critical';
+  }
+
+  if (normalized >= 0.72) {
+    return 'warning';
+  }
+
+  return 'normal';
+}
+
+function getRingPalette(statusClass) {
+  const palette = {
+    normal: {
+      accent: '#4fdcff',
+      inactive: 'rgba(126, 151, 183, 0.26)',
+      label: 'NORMAL',
+      glow: 'rgba(79, 220, 255, 0.32)'
+    },
+    warning: {
+      accent: '#ffb454',
+      inactive: 'rgba(136, 149, 175, 0.26)',
+      label: 'WARNING',
+      glow: 'rgba(255, 180, 84, 0.32)'
+    },
+    critical: {
+      accent: '#ff5d6c',
+      inactive: 'rgba(136, 149, 175, 0.26)',
+      label: 'CRITICAL',
+      glow: 'rgba(255, 93, 108, 0.32)'
+    },
+    offline: {
+      accent: '#7d8899',
+      inactive: 'rgba(94, 106, 128, 0.28)',
+      label: 'OFFLINE',
+      glow: 'rgba(125, 136, 153, 0.3)'
+    },
+    unknown: {
+      accent: '#6f7d96',
+      inactive: 'rgba(111, 125, 150, 0.28)',
+      label: 'UNKNOWN',
+      glow: 'rgba(111, 125, 150, 0.24)'
+    }
+  };
+
+  return palette[statusClass] || palette.unknown;
+}
+
+// Top-center status icon switcher. Change the label here if you want a different
+// connectivity symbol for connected / weak / offline / bluetooth / cloud / sensor.
+function getConnectionIcon(connectionStatus = 'connected') {
+  const iconMap = {
+    connected: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a14 14 0 0 1 14 0"/><path d="M8.5 15.5a8.5 8.5 0 0 1 7 0"/><path d="M12 19v0"/></svg>',
+    weak: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5a18 18 0 0 1 18 0"/><path d="M6.5 13a12 12 0 0 1 11 0"/><path d="M10.5 16.5a6 6 0 0 1 3 0"/></svg>',
+    offline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M7 12a10 10 0 0 1 10 0"/><path d="M10 15.5a4 4 0 0 1 4 0"/></svg>',
+    bluetooth: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10-5 5V2l5 5L7 17"/></svg>',
+    cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h9a4 4 0 0 0 .5-7.98A6 6 0 0 0 6.4 9.5 4.4 4.4 0 0 0 7 18z"/></svg>',
+    sensor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M4 10h16"/><path d="M4 14h16"/><circle cx="12" cy="12" r="2"/></svg>'
+  };
+
+  return iconMap[connectionStatus] || iconMap.connected;
+}
+
+function polarToCartesian(cx, cy, radius, angle) {
+  const radians = (angle - 90) * (Math.PI / 180);
+  return {
+    x: cx + radius * Math.cos(radians),
+    y: cy + radius * Math.sin(radians)
+  };
+}
+
+function pathArc(cx, cy, radius, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, radius, endAngle);
+  const end = polarToCartesian(cx, cy, radius, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+}
+
+// This is the live SVG ring that replaces the old static gauge look.
+// Segment count and radius are the main knobs if you want the ring tighter or looser.
+function buildSegmentedRingMarkup(fillPercent, statusClass) {
+  const palette = getRingPalette(statusClass);
+  const segmentCount = 56;
+  const activeSegments = Math.round((fillPercent / 100) * segmentCount);
+  const segmentGap = 360 / segmentCount;
+  const radius = 90;
+
+  const segments = Array.from({ length: segmentCount }, (_, index) => {
+    const start = index * segmentGap;
+    const end = start + segmentGap - 2;
+    const isActive = index < activeSegments;
+    return `<path d="${pathArc(110, 110, radius, start, end)}" stroke="${isActive ? palette.accent : palette.inactive}" stroke-width="10" fill="none" stroke-linecap="round" />`;
+  }).join('');
+
+  return `
+    <svg class="smart-monitor-ring" viewBox="0 0 220 220" aria-hidden="true">
+      <defs>
+        <filter id="smart-glow-${statusClass}">
+          <feGaussianBlur stdDeviation="3.6" result="coloredBlur" />
+          <feMerge>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <g filter="url(#smart-glow-${statusClass})">${segments}</g>
+    </svg>
+  `;
+}
+
+function formatValue(value, unit) {
+  if (typeof value === 'number') {
+    if (unit === '%' || unit === 'kWh' || unit === 'm³' || unit === 'L') {
+      return Number.isInteger(value) ? value : value.toFixed(1);
+    }
+
+    return value.toFixed(value < 10 && !Number.isInteger(value) ? 1 : 0);
+  }
+
+  return value;
+}
+
+// Single reusable card builder for the smart monitor design.
+// Feed it existing sensor values and it will render the premium circular widget.
+function createSmartMonitorMarkup({
+  title,
+  value,
+  unit,
+  min,
+  max,
+  statusLabel,
+  connectionStatus = 'connected',
+  icon = '●',
+  dataView,
+  cardClass = '',
+  compact = false,
+  detailMode = false
+}) {
+  const fillPercent = getRingFillPercent(value, min, max);
+  const statusClass = getStatusClass(value, max, statusLabel);
+  const palette = getRingPalette(statusClass);
+  const safeValue = detailMode ? value : formatValue(value, unit);
+  const safeUnit = detailMode ? unit : unit;
+
+  return `
+    <button class="smart-monitor-card ${cardClass}" data-view="${dataView}">
+      <div class="smart-monitor-shell">
+        <div class="smart-monitor-outer-housing">
+          <div class="smart-monitor-outer-shadow"></div>
+          <div class="smart-monitor-bridge"></div>
+          <div class="smart-monitor-display">
+            <div class="smart-monitor-top-status">${getConnectionIcon(connectionStatus)}</div>
+            ${buildSegmentedRingMarkup(fillPercent, statusClass)}
+            <div class="smart-monitor-center-screen">
+              <div class="smart-monitor-sensor-icon">${icon}</div>
+              <div class="smart-monitor-reading-line">
+                <span class="smart-monitor-value">${safeValue}</span>
+                <span class="smart-monitor-unit">${safeUnit}</span>
+              </div>
+              <div class="smart-monitor-measurement-label">${title.toUpperCase()}</div>
+              <div class="smart-monitor-state-label">${palette.label}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </button>
+  `;
+}
+
 function cycleMetric(direction) {
   if (!['triton', 'ignis', 'lumen'].includes(state.currentView)) {
     return;
@@ -225,29 +433,21 @@ function render() {
 
       <section class="metrics-grid">
         ${Object.entries(devices)
-          .map(
-            ([key, item]) => `
-              <button class="metric-card" data-view="${key}">
-                <div class="metric-top">
-                  <div>
-                    <p class="eyebrow">Atlas • ${item.subtitle}</p>
-                    <h3>${item.name}</h3>
-                    <p class="device-subtitle">${item.subtitle}</p>
-                  </div>
-                  <div class="icon-chip">${item.icon}</div>
-                </div>
-                <div class="metric-value">${item.reading}</div>
-                <div class="metric-meta">${item.status}</div>
-                <div class="status-row">
-                  <span class="status-badge">Online</span>
-                  <span>Tap to inspect</span>
-                </div>
-                <div class="progress-track">
-                  <div class="progress-fill" style="width:70%; background:${item.accent}"></div>
-                </div>
-              </button>
-            `
-          )
+          .map(([key, item]) => {
+            const primaryMetric = item.gauges[0];
+            return createSmartMonitorMarkup({
+              title: item.name,
+              value: primaryMetric.value,
+              unit: primaryMetric.unit,
+              min: 0,
+              max: primaryMetric.max,
+              statusLabel: item.status,
+              connectionStatus: 'connected',
+              icon: item.icon,
+              dataView: key,
+              cardClass: 'overview-monitor'
+            });
+          })
           .join('')}
       </section>
 
@@ -348,7 +548,20 @@ function render() {
   const device = devices[state.currentView];
   const activeIndex = state.metricIndex[state.currentView] ?? 0;
   const metric = device.gauges[activeIndex];
-  const ringPercent = Math.min(100, Math.max(6, (metric.value / metric.max) * 100));
+  const statusLabel = device.status || 'normal';
+  const smartMonitor = createSmartMonitorMarkup({
+    title: metric.label,
+    value: metric.value,
+    unit: metric.unit,
+    min: 0,
+    max: metric.max,
+    statusLabel,
+    connectionStatus: 'connected',
+    icon: device.icon,
+    dataView: state.currentView,
+    cardClass: 'detail-monitor',
+    detailMode: true
+  });
 
   appView.innerHTML = `
     <section class="detail-card">
@@ -364,13 +577,7 @@ function render() {
 
       <div class="gauge-panel">
         <div class="gauge-shell">
-          <div class="gauge-ring" style="--pct:${ringPercent}; --accent:${device.accent}">
-            <div class="gauge-inner">
-              <p class="gauge-label">${metric.label}</p>
-              <div class="gauge-value">${metric.value}<span>${metric.unit}</span></div>
-              <p class="gauge-subtext">${metric.summary}</p>
-            </div>
-          </div>
+          <div class="smart-monitor-detail-wrap">${smartMonitor}</div>
           <div class="gauge-copy">
             <p class="eyebrow">Live display ${activeIndex + 1}/${device.gauges.length}</p>
             <h3>${metric.summary}</h3>
@@ -394,7 +601,7 @@ function render() {
                 ${index === activeIndex ? `style="border-color:${device.accent}; box-shadow: inset 0 0 0 1px ${device.accent};"` : ''}
               >
                 <span>${item.label}</span>
-                <strong>${item.value}${item.unit}</strong>
+                <strong>${formatValue(item.value, item.unit)}${item.unit}</strong>
               </button>
             `
           )
