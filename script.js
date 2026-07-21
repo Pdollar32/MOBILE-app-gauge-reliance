@@ -1,5 +1,6 @@
 const state = {
   currentView: 'overview',
+  viewHistory: [],
   metricIndex: {
     triton: 0,
     ignis: 0,
@@ -146,6 +147,31 @@ function cycleMetric(direction) {
   render();
 }
 
+function navigateToView(view, shouldPushHistory = true) {
+  if (view === state.currentView) {
+    return;
+  }
+
+  if (view === 'overview') {
+    state.viewHistory = [];
+  } else if (shouldPushHistory) {
+    state.viewHistory.push(state.currentView);
+  }
+
+  state.currentView = view;
+  render();
+}
+
+function goBack() {
+  if (state.viewHistory.length > 0) {
+    state.currentView = state.viewHistory.pop();
+  } else {
+    state.currentView = 'overview';
+  }
+
+  render();
+}
+
 function render() {
   const shutdownBtn = document.getElementById('shutdown-btn');
   if (shutdownBtn) {
@@ -283,7 +309,7 @@ function render() {
   if (state.currentView === 'alerts') {
     appView.innerHTML = `
       <section class="detail-card">
-        <button class="back-btn" data-view="overview">← Back to Atlas</button>
+        <button class="back-btn" data-action="go-back">← Back</button>
         <div class="detail-hero">
           <div>
             <p class="eyebrow">Atlas alerts</p>
@@ -326,7 +352,7 @@ function render() {
 
   appView.innerHTML = `
     <section class="detail-card">
-      <button class="back-btn" data-view="overview">← Back to Atlas</button>
+      <button class="back-btn" data-action="go-back">← Back</button>
       <div class="detail-hero">
         <div>
           <p class="eyebrow">Atlas • ${device.subtitle}</p>
@@ -406,6 +432,13 @@ document.addEventListener('click', (event) => {
     return;
   }
 
+  const goBackButton = event.target.closest('[data-action="go-back"]');
+  if (goBackButton) {
+    event.preventDefault();
+    goBack();
+    return;
+  }
+
   const metricCycle = event.target.closest('[data-action="cycle-metric"]');
   if (metricCycle) {
     event.preventDefault();
@@ -427,8 +460,7 @@ document.addEventListener('click', (event) => {
   }
 
   event.preventDefault();
-  state.currentView = trigger.dataset.view;
-  render();
+  navigateToView(trigger.dataset.view, trigger.dataset.view !== 'overview');
 });
 
 render();
