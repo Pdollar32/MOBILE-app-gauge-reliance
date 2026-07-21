@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atlas Home Control</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Atlas network hub</p>
+          <h1>Atlas Home Control</h1>
+        </div>
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          All gauges linked
+        </div>
+      </header>
+
+      <nav class="bottom-nav" aria-label="Primary">
+        <button class="nav-btn active" data-view="overview">Atlas</button>
+        <button class="nav-btn" data-view="triton">Triton</button>
+        <button class="nav-btn" data-view="ignis">Ignis</button>
+        <button class="nav-btn" data-view="lumen">Lumen</button>
+        <button class="nav-btn" data-view="alerts">Alerts</button>
+      </nav>
+
+      <main id="app-view"></main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
